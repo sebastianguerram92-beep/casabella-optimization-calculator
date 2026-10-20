@@ -42,6 +42,7 @@ button.link{border:0;background:none;color:var(--accent);padding:4px 6px}
 table{border-collapse:collapse;width:100%;font-size:14px}
 th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
 th{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--panel);position:sticky;top:0;z-index:1}
+tr.clk{cursor:pointer}tr.clk:hover td{background:var(--soft,rgba(127,127,127,.08))}tr.clk.on td{background:rgba(127,127,127,.16);font-weight:600}
 td.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
 tr:last-child td{border-bottom:0}
 .stock input.len{width:9em}.stock input.qty{width:5em}.stock input.lab{width:12em}
@@ -148,7 +149,7 @@ svg .ax{fill:var(--muted);font-family:var(--mono);font-size:11px}
       <span id="bCount" class="pill"></span>
     </div>
     <div id="bars" class="bars" style="margin-top:10px"></div>
-    <p id="bNone" class="hint" hidden>Ninguna barra lleva ese item. Revisa el número o si está marcado en el paso 2.</p>
+    <p id="bNone" class="hint" hidden></p>
   </div>
   <div id="vItems" hidden><div class="tblwrap tall"><table><thead><tr><th>Item</th><th>Referencia</th><th>Largo</th><th>Piezas</th><th>Sale de</th></tr></thead><tbody id="itemsBody"></tbody></table></div></div>
   <div id="vLeft" hidden><div id="leftBox"></div></div>
@@ -232,9 +233,9 @@ $('#stockBody').addEventListener('input',e=>{const t=e.target,i=+t.dataset.i,k=t
 $('#stockBody').addEventListener('change',e=>{if(e.target.tagName==='SELECT'){st.stock[+e.target.dataset.i][e.target.dataset.k]=e.target.value;st.example=false;changed();}});
 $('#stockBody').addEventListener('click',e=>{const d=e.target.dataset.del;if(d!=null){st.stock.splice(+d,1);st.example=false;renderStock();changed();}});
 function stockTot(){let a=0,b=0;st.stock.forEach(r=>{if(!isFinite(parseLen(r.len)))return;if(r.src==='pl54')b+=r.qty;else a+=r.qty;});$('#stockTot').textContent=`En sitio: ${a} · Llega hoy: ${b}`;}
-$('#offFirst').checked=st.offFirst;$('#offFirst').addEventListener('input',e=>{st.offFirst=e.target.checked;changed();});
-$('#prio').checked=st.priority;$('#prio').addEventListener('input',e=>{st.priority=e.target.checked;changed();});
-$('#useArr').checked=st.useArr;$('#useArr').addEventListener('input',e=>{st.useArr=e.target.checked;changed();});
+$('#offFirst').checked=st.offFirst;$('#offFirst').addEventListener('change',e=>{st.offFirst=e.target.checked;changed();});
+$('#prio').checked=st.priority;$('#prio').addEventListener('change',e=>{st.priority=e.target.checked;changed();});
+$('#useArr').checked=st.useArr;$('#useArr').addEventListener('change',e=>{st.useArr=e.target.checked;changed();});
 $('#addPL').onclick=()=>{if(st.stock.some(r=>r.src==='pl54')){$('#addPL').textContent='El envío PL-54 ya está cargado';return;}st.stock.push(...JSON.parse(JSON.stringify(PL54)));st.useArr=true;$('#useArr').checked=true;renderStock();changed();};
 $('#addStock').onclick=()=>{st.stock.push({len:'',qty:1,type:'off',lab:'',src:'sitio'});st.example=false;renderStock();const i=st.stock.length-1;$('#sl'+i).focus();};
 document.querySelectorAll('[data-addstd]').forEach(b=>b.onclick=()=>{const L=b.dataset.addstd;const r=st.stock.find(r=>r.type==='new'&&parseLen(r.len)===+L);if(r)r.qty++;else st.stock.push({len:L,qty:1,type:'new',lab:'',src:'sitio'});st.example=false;renderStock();changed();});
@@ -254,11 +255,12 @@ function renderParts(){
   updateCount();
 }
 function updateCount(){let n=0,t=0;for(const r in st.sel){if(st.sel[r]>0){n++;t+=st.sel[r];}}$('#partsCount').textContent=`${n} items · ${t} piezas`;}
-$('#partsBody').addEventListener('input',e=>{const t=e.target,ref=t.dataset.ref;if(!ref)return;const p=byRef[ref];
+const onPart=e=>{const t=e.target,ref=t.dataset.ref;if(!ref)return;const p=byRef[ref];
   if(t.type==='checkbox'){st.sel[ref]=t.checked?p.qty:0;const q=t.closest('tr').querySelector('input.q');q.value=st.sel[ref];}
   else{st.sel[ref]=Math.max(0,parseInt(t.value||'0',10)||0);t.closest('tr').querySelector('input[type=checkbox]').checked=st.sel[ref]>0;}
-  t.closest('tr').className=st.sel[ref]>0?'':'off';updateCount();changed();});
-['#fSheet','#fSearch','#fOnly'].forEach(s=>$(s).addEventListener('input',renderParts));
+  t.closest('tr').className=st.sel[ref]>0?'':'off';updateCount();changed();};
+$('#partsBody').addEventListener('input',onPart);$('#partsBody').addEventListener('change',e=>{if(e.target.type==='checkbox')onPart(e);});
+['#fSheet','#fSearch','#fOnly'].forEach(s=>['input','change'].forEach(ev=>$(s).addEventListener(ev,renderParts)));
 document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{const k=b.dataset.preset;st.sel={};
   P.forEach(p=>{if(k==='all'||(k==='chicas'?(p.sheet==='ID2.3'&&p.item>=229):k===p.sheet))st.sel[p.ref]=p.qty;});renderParts();changed();});
 
@@ -432,7 +434,7 @@ function stockName(b){const r=st.stock[b.ri];return `${b.type==='new'?'Barra':'R
 
 /* --- paso 3 --- */
 function render(){
-  const R=optimize();
+  const R=optimize();lastR=R;
   const placed=R.pieces.length-R.miss.length;
   const need=R.pieces.reduce((a,p)=>a+p.mm,0)-R.miss.reduce((a,p)=>a+p.mm,0);
   const util=R.stockUsed?need/R.stockUsed*100:0;
@@ -462,7 +464,7 @@ function render(){
    $('#loss').textContent=L?`De todo el material que se abre: ${pc(need)} son piezas, ${pc(tr)} recortes de punta, ${pc(kp)} retazos de ${f0(st.keepMin)} mm o más para el rack y ${pc(Math.max(L-need-tr-kp-sc,0)+sc)} chatarra y disco.`:'';}
   filterBars();
   {const ask=new Map(),miss=new Map();R.pieces.forEach(p=>ask.set(p.sheet,(ask.get(p.sheet)||0)+1));R.miss.forEach(p=>miss.set(p.sheet,(miss.get(p.sheet)||0)+1));
-   const rows=Object.keys(SHEETS).filter(k=>ask.has(k)).map(k=>{const a=ask.get(k),m=miss.get(k)||0;return `<tr><td><b>${k}</b></td><td>${SHEETS[k]}</td><td class="n">${a}</td><td class="n">${a-m}</td><td class="n"${m?' style="color:var(--bad);font-weight:600"':''}>${m}</td></tr>`;}).join('');
+   const rows=Object.keys(SHEETS).filter(k=>ask.has(k)).map(k=>{const a=ask.get(k),m=miss.get(k)||0;return `<tr data-sheet="${k}" class="clk${$('#bSheet').value===k?' on':''}" title="Ver las barras de ${k}"><td><b>${k}</b></td><td>${SHEETS[k]}</td><td class="n">${a}</td><td class="n">${a-m}</td><td class="n"${m?' style="color:var(--bad);font-weight:600"':''}>${m}</td></tr>`;}).join('');
    $('#bySheet').innerHTML=rows?`<div class="tblwrap"><table><thead><tr><th>Hoja</th><th>Tramo</th><th>Piezas pedidas</th><th>Salen</th><th>Faltan</th></tr></thead><tbody>${rows}</tbody></table></div>`:'';}
   // por item
   const refs=[...new Set(R.pieces.map(p=>p.ref))].sort((a,b)=>byRef[a].ord-byRef[b].ord);
@@ -487,10 +489,18 @@ function filterBars(){
       return /^\d+$/.test(q)?num==='#'+parseInt(q,10):nm.includes(q);});
     el.hidden=!ok;if(ok){shown++;n+=parseInt(el.querySelector('.pill.x').textContent.replace(/\D/g,''),10)||0;}});
   const filt=q||sh;$('#bCount').textContent=filt?`${shown} patrones · ${n} barras`:`${bars.length} patrones`;
-  $('#bNone').hidden=!(filt&&bars.length&&!shown);
+  const none=filt&&bars.length&&!shown;$('#bNone').hidden=!none;
+  if(none){const mi=sh?(lastR&&lastR.miss||[]).filter(p=>p.sheet===sh).length:0;
+    $('#bNone').textContent=sh&&!q?(mi?`Ninguna barra sale para ${sh} con el material de hoy: las ${mi} piezas de esa hoja están en "Falta material".`:`No hay piezas de ${sh} marcadas en el paso 2.`)
+      :'Ninguna barra lleva ese item'+(sh?' en '+sh:'')+'. Revisa el número, la hoja o si está marcado en el paso 2.';}
+  document.querySelectorAll('#bySheet tr[data-sheet]').forEach(tr=>tr.classList.toggle('on',tr.dataset.sheet===sh));
 }
-$('#bSearch').addEventListener('input',filterBars);$('#bSheet').addEventListener('input',filterBars);
-let missOpen=false;
+['#bSearch','#bSheet'].forEach(s=>['input','change'].forEach(ev=>$(s).addEventListener(ev,filterBars)));
+// tocar una hoja en el resumen filtra las barras por esa hoja
+$('#bySheet').addEventListener('click',e=>{const tr=e.target.closest('tr[data-sheet]');if(!tr)return;
+  const sh=tr.dataset.sheet;$('#bSheet').value=$('#bSheet').value===sh?'':sh;$('#bSearch').value='';
+  document.querySelector('[data-view="bars"]').click();filterBars();$('#vBars').scrollIntoView({behavior:'smooth',block:'start'});});
+let missOpen=false,lastR=null;
 let tmr=null;function changed(){save();stockTot();clearTimeout(tmr);tmr=setTimeout(render,250);}
 renderStock();stockTot();renderParts();render();
 })();
