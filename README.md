@@ -6,7 +6,7 @@ Calculadora de optimización de material para los fins del túnel (proyecto 7829
 
 ## Cómo se actualiza
 
-Cada push a `main` corre `.github/workflows/deploy.yml`, que arma la página y la publica en GitHub Pages.
+Cada push a `main` corre `.github/workflows/deploy.yml`, que arma la página y la publica en GitHub Pages. Netlify también la publica usando `netlify.toml` (build `python3 build.py`, carpeta `dist`).
 
 ## Archivos
 
