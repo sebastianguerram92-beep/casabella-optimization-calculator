@@ -105,6 +105,7 @@ svg .ax{fill:var(--muted);font-family:var(--mono);font-size:11px}
       <label>Recorte en cada punta, retazo (mm)<input id="trimOff" type="number" step="0.1" min="0"></label>
       <label>Kerf del disco (mm)<input id="kerf" type="number" step="0.1" min="0"></label>
       <label>Guardar sobrante si mide más de (mm)<input id="keepMin" type="number" step="10" min="0"></label>
+      <label class="hint" style="display:flex;gap:6px;align-items:center"><input id="keepAuto" type="checkbox"> Usar la pieza más corta que falta cortar (<span id="keepAutoV"></span> mm). Lo más corto es basura.</label>
     </div>
     <p class="hint" style="margin-top:8px">Valores del plan de ES Metals: recorte 3" (76.2 mm) y kerf 13/64" (5.2 mm).</p>
   </details>
@@ -197,7 +198,7 @@ function load(){
   if(!o.pl54v3){o.stock=o.stock.filter(r=>!(r.src!=='pl54'&&r.type==='new'&&parseLen(r.len)===6500&&r.qty===88));o.pl54v3=true;}
   if(!o.pl54v4){if(!o.stock.some(r=>r.src!=='pl54'&&r.type==='new'&&parseLen(r.len)===6500))o.stock.unshift({len:'6500',qty:88,type:'new',lab:'',src:'sitio'});o.pl54v4=true;}
   if(!o.pl54v5){const fc={6500:88,6000:168,4700:40};o.stock.forEach(r=>{if(r.src==='pl54'){const L=parseLen(r.len);const n=PL54.find(x=>+x.len===L);if(n&&fc[L]===r.qty){r.qty=n.qty;r.lab=n.lab;}}});
-    ARR21.forEach(a=>{const m=o.stock.find(r=>r.src!=='pl54'&&r.type==='new'&&parseLen(r.len)===+a.len&&r.qty===a.qty);if(m){if(!m.lab)m.lab=a.lab;}else o.stock.push({...a});});o.pl54v5=true;}o.priority=o.priority??true;o.offFirst=o.offFirst??true;o.trimNew=o.trimNew??76.2;o.trimOff=o.trimOff??0;o.kerf=o.kerf??5.2;o.keepMin=o.keepMin??300;
+    ARR21.forEach(a=>{const m=o.stock.find(r=>r.src!=='pl54'&&r.type==='new'&&parseLen(r.len)===+a.len&&r.qty===a.qty);if(m){if(!m.lab)m.lab=a.lab;}else o.stock.push({...a});});o.pl54v5=true;}o.priority=o.priority??true;o.offFirst=o.offFirst??true;o.trimNew=o.trimNew??76.2;o.trimOff=o.trimOff??0;o.kerf=o.kerf??5.2;o.keepMin=o.keepMin??300;o.keepAuto=o.keepAuto??true;
   return o;
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
@@ -247,6 +248,7 @@ $('#useArr').checked=st.useArr;$('#useArr').addEventListener('change',e=>{st.use
 $('#addPL').onclick=()=>{if(st.stock.some(r=>r.src==='pl54')){$('#addPL').textContent='El envío PL-54 ya está cargado';return;}st.stock.push(...JSON.parse(JSON.stringify(PL54)));st.useArr=true;$('#useArr').checked=true;renderStock();changed();};
 $('#addStock').onclick=()=>{st.stock.push({len:'',qty:1,type:'off',lab:'',src:'sitio'});st.example=false;renderStock();const i=st.stock.length-1;$('#sl'+i).focus();};
 document.querySelectorAll('[data-addstd]').forEach(b=>b.onclick=()=>{const L=b.dataset.addstd;const r=st.stock.find(r=>r.type==='new'&&parseLen(r.len)===+L);if(r)r.qty++;else st.stock.push({len:L,qty:1,type:'new',lab:'',src:'sitio'});st.example=false;renderStock();changed();});
+$('#keepAuto').checked=st.keepAuto;$('#keepAuto').addEventListener('change',e=>{st.keepAuto=e.target.checked;$('#keepMin').disabled=st.keepAuto;changed();});$('#keepMin').disabled=st.keepAuto;
 ['trimNew','trimOff','kerf','keepMin'].forEach(k=>{const el=$('#'+k);el.value=st[k];el.addEventListener('input',()=>{const v=parseFloat(el.value);if(isFinite(v)&&v>=0){st[k]=v;changed();}});});
 
 /* --- paso 2 --- */
@@ -438,6 +440,7 @@ function svgBar(b){
   o.push(`<text x="2" y="${H+16}" class="ax" text-anchor="start">0</text><text x="${W-2}" y="${H+16}" class="ax" text-anchor="end">${f0(b.L)} mm</text></svg>`);
   return o.join('');
 }
+function keepMin(){if(!st.keepAuto)return st.keepMin;const sel=P.filter(p=>st.sel[p.ref]>0);return Math.min(...(sel.length?sel:P).map(p=>p.mm));}
 function stockName(b){const r=st.stock[b.ri];return `${b.type==='new'?'Barra':'Retazo'} ${f0(b.L)} mm · ${b.src==='pl54'?'llega hoy PL-54':'en sitio'}`;}
 
 /* --- paso 3 --- */
@@ -446,7 +449,8 @@ function render(){
   const placed=R.pieces.length-R.miss.length;
   const need=R.pieces.reduce((a,p)=>a+p.mm,0)-R.miss.reduce((a,p)=>a+p.mm,0);
   const util=R.stockUsed?need/R.stockUsed*100:0;
-  const keep=R.bars.filter(b=>b.left>=st.keepMin);
+  const KM=keepMin();$('#keepAutoV').textContent=f0(KM);if(st.keepAuto)$('#keepMin').value=Math.round(KM);
+  const keep=R.bars.filter(b=>b.left>=KM);
   const nb=R.bars.filter(b=>b.type!=='off'),ob=R.bars.filter(b=>b.type==='off');
   const nL=nb.reduce((a,b)=>a+b.L,0),nU=nL?nb.reduce((a,b)=>a+b.cuts.reduce((x,c)=>x+c.mm,0),0)/nL*100:0;
   $('#kpis').innerHTML=[
@@ -455,7 +459,7 @@ function render(){
     [ob.length,'retazos del rack que se usan',''],
     [nU.toFixed(1)+' %','aprovechamiento de las barras nuevas',''],
     [util.toFixed(1)+' %','aprovechamiento total (barras nuevas + retazos)',''],
-    [keep.length,`sobrantes de ${f0(st.keepMin)} mm o más para el rack`,'']]
+    [keep.length,`sobrantes de ${f0(KM)} mm o más para el rack`,'']]
     .map(([v,l,c])=>`<div class="kpi ${c}"><b>${v}</b><span>${l}</span></div>`).join('');
   if(R.miss.length){const m=new Map();R.miss.slice().sort((a,b)=>a.ord-b.ord).forEach(p=>m.set(p.ref,(m.get(p.ref)||0)+1));
     $('#missing').innerHTML=`<details class="alert" id="missDet"${missOpen?' open':''}><summary style="cursor:pointer"><b>Falta material para ${R.miss.length} pieza${R.miss.length>1?'s':''}</b> <span class="hint">(toca para ver u ocultar)</span></summary><p style="margin-top:6px">${[...m].map(([r,n])=>`${n}× <span class="ref">${byRef[r].name}</span> (${f0(byRef[r].mm)} mm)`).join(', ')}. Agrega barras o retazos más largos en el paso 1.</p></details>`;$('#missDet').addEventListener('toggle',e=>{missOpen=e.target.open;});}
@@ -469,11 +473,11 @@ function render(){
     const cnt=new Map();b.cuts.forEach(p=>cnt.set(p.ref,(cnt.get(p.ref)||0)+1));
     const txt=[...cnt].map(([r,n])=>`${n}× <span class="ref">${byRef[r].name}</span> ${fr(byRef[r].mm)}`).join(' + ');
     const keyS=[...cnt.keys()].map(r=>{const p=byRef[r];return `${p.sheet}|${p.name.toLowerCase()}|#${sfx(r)}`;}).join('~');
-    return `<div class="bar" data-k="${esc(keyS)}"><div class="barhead"><h3>${tag}</h3><span class="pill x">× ${g.n}</span><span class="pill">${esc(stockName(b))}</span>${b.left>=st.keepMin?`<span class="pill keep">guardar sobrante ${f0(b.left)} mm</span>`:''}</div>
+    return `<div class="bar" data-k="${esc(keyS)}"><div class="barhead"><h3>${tag}</h3><span class="pill x">× ${g.n}</span><span class="pill">${esc(stockName(b))}</span>${b.left>=KM?`<span class="pill keep">guardar sobrante ${f0(b.left)} mm</span>`:''}</div>
      <div class="barbox">${svgBar(b)}</div><p class="hint">${txt} · sobra ${f0(Math.max(b.left,0))} mm (${fr(Math.max(b.left,0))}) por barra</p></div>`;}).join('');
-  {let L=0,tr=0,kp=0,sc=0;R.bars.forEach(b=>{L+=b.L;tr+=2*b.trim;const l=Math.max(b.left,0);if(l>=st.keepMin)kp+=l;else sc+=l;});
+  {let L=0,tr=0,kp=0,sc=0;R.bars.forEach(b=>{L+=b.L;tr+=2*b.trim;const l=Math.max(b.left,0);if(l>=KM)kp+=l;else sc+=l;});
    const pc=x=>(L?x/L*100:0).toFixed(1)+' %';
-   $('#loss').textContent=L?`De todo el material que se abre: ${pc(need)} son piezas, ${pc(tr)} recortes de punta, ${pc(kp)} retazos de ${f0(st.keepMin)} mm o más para el rack y ${pc(Math.max(L-need-tr-kp-sc,0)+sc)} chatarra y disco.`:'';}
+   $('#loss').textContent=L?`De todo el material que se abre: ${pc(need)} son piezas, ${pc(tr)} recortes de punta, ${pc(kp)} retazos de ${f0(KM)} mm o más para el rack y ${pc(Math.max(L-need-tr-kp-sc,0)+sc)} basura (sobrantes de menos de ${f0(KM)} mm) y disco.`:'';}
   filterBars();
   {const ask=new Map(),miss=new Map();R.pieces.forEach(p=>ask.set(p.sheet,(ask.get(p.sheet)||0)+1));R.miss.forEach(p=>miss.set(p.sheet,(miss.get(p.sheet)||0)+1));
    const rows=Object.keys(SHEETS).filter(k=>ask.has(k)).map(k=>{const a=ask.get(k),m=miss.get(k)||0;return `<tr data-sheet="${k}" class="clk${$('#bSheet').value===k?' on':''}" title="Ver las barras de ${k}"><td><b>${k}</b></td><td>${SHEETS[k]}</td><td class="n">${a}</td><td class="n">${a-m}</td><td class="n"${m?' style="color:var(--bad);font-weight:600"':''}>${m}</td></tr>`;}).join('');
