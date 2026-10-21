@@ -49,6 +49,7 @@ tr:last-child td{border-bottom:0}
 .parts input.q{width:4.5em;text-align:right}
 .parts tr.off td{color:var(--muted)}
 .ref{font-family:var(--mono);font-weight:600;white-space:nowrap}
+.kpi small{font-size:13px;font-weight:400}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .kpi{border:1px solid var(--line);border-radius:4px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
 .kpi b{font-family:var(--mono);font-size:22px;font-variant-numeric:tabular-nums}
@@ -440,10 +441,14 @@ function render(){
   const need=R.pieces.reduce((a,p)=>a+p.mm,0)-R.miss.reduce((a,p)=>a+p.mm,0);
   const util=R.stockUsed?need/R.stockUsed*100:0;
   const keep=R.bars.filter(b=>b.left>=st.keepMin);
+  const nb=R.bars.filter(b=>b.type!=='off'),ob=R.bars.filter(b=>b.type==='off');
+  const nL=nb.reduce((a,b)=>a+b.L,0),nU=nL?nb.reduce((a,b)=>a+b.cuts.reduce((x,c)=>x+c.mm,0),0)/nL*100:0;
   $('#kpis').innerHTML=[
     [`${placed} / ${R.pieces.length}`,'piezas que salen',R.miss.length?'bad':(R.pieces.length?'good':'')],
-    [R.bars.length,'barras o retazos a cortar',''],
-    [util.toFixed(1)+' %','aprovechamiento',''],
+    [`${nb.length} <small>(${(nL/1000).toFixed(0)} m)</small>`,'barras nuevas que se abren',''],
+    [ob.length,'retazos del rack que se usan',''],
+    [nU.toFixed(1)+' %','aprovechamiento de las barras nuevas',''],
+    [util.toFixed(1)+' %','aprovechamiento total (barras nuevas + retazos)',''],
     [keep.length,`sobrantes de ${f0(st.keepMin)} mm o más para el rack`,'']]
     .map(([v,l,c])=>`<div class="kpi ${c}"><b>${v}</b><span>${l}</span></div>`).join('');
   if(R.miss.length){const m=new Map();R.miss.slice().sort((a,b)=>a.ord-b.ord).forEach(p=>m.set(p.ref,(m.get(p.ref)||0)+1));
