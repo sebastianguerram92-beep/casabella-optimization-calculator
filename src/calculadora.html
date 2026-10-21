@@ -64,6 +64,8 @@ tr:last-child td{border-bottom:0}
 .barhead{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
 .pill{font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:99px;background:var(--off);border:1px solid var(--line);white-space:nowrap}
 .pill.x{background:var(--accent);color:var(--accentfg);border-color:transparent;font-weight:600}
+.marks{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.marks input{width:22px;height:22px;margin:0;accent-color:var(--ok)}
+.bar.done{border-color:var(--ok);background:var(--okbg)}
 .pill.keep{background:var(--okbg);color:var(--ok);border-color:transparent}
 .barbox{overflow-x:auto}
 svg.draw{width:100%;min-width:640px;height:auto;display:block}
@@ -149,6 +151,7 @@ svg .ax{fill:var(--muted);font-family:var(--mono);font-size:11px}
     <div class="row" style="margin-top:10px">
       <select id="bSheet" aria-label="Hoja"><option value="">Todas las hojas</option><option>ID2.1</option><option>ID2.2</option><option>ID2.3</option><option>ID3.0</option><option>ID4.0</option><option>ID4.1</option><option>ID5.0</option></select>
       <input id="bSearch" type="search" placeholder="Filtrar por item: 242, INT-03, sw1-01-243" style="flex:1 1 220px" aria-label="Filtrar barras por item">
+      <label class="hint" style="display:flex;gap:6px;align-items:center"><input id="bHideDone" type="checkbox"> Ocultar las ya marcadas</label>
       <span id="bCount" class="pill"></span>
     </div>
     <div id="bars" class="bars" style="margin-top:10px"></div>
@@ -198,7 +201,7 @@ function load(){
   if(!o.pl54v3){o.stock=o.stock.filter(r=>!(r.src!=='pl54'&&r.type==='new'&&parseLen(r.len)===6500&&r.qty===88));o.pl54v3=true;}
   if(!o.pl54v4){if(!o.stock.some(r=>r.src!=='pl54'&&r.type==='new'&&parseLen(r.len)===6500))o.stock.unshift({len:'6500',qty:88,type:'new',lab:'',src:'sitio'});o.pl54v4=true;}
   if(!o.pl54v5){const fc={6500:88,6000:168,4700:40};o.stock.forEach(r=>{if(r.src==='pl54'){const L=parseLen(r.len);const n=PL54.find(x=>+x.len===L);if(n&&fc[L]===r.qty){r.qty=n.qty;r.lab=n.lab;}}});
-    ARR21.forEach(a=>{const m=o.stock.find(r=>r.src!=='pl54'&&r.type==='new'&&parseLen(r.len)===+a.len&&r.qty===a.qty);if(m){if(!m.lab)m.lab=a.lab;}else o.stock.push({...a});});o.pl54v5=true;}o.priority=o.priority??true;o.offFirst=o.offFirst??true;o.trimNew=o.trimNew??76.2;o.trimOff=o.trimOff??0;o.kerf=o.kerf??5.2;o.keepMin=o.keepMin??300;o.keepAuto=o.keepAuto??true;
+    ARR21.forEach(a=>{const m=o.stock.find(r=>r.src!=='pl54'&&r.type==='new'&&parseLen(r.len)===+a.len&&r.qty===a.qty);if(m){if(!m.lab)m.lab=a.lab;}else o.stock.push({...a});});o.pl54v5=true;}o.priority=o.priority??true;o.offFirst=o.offFirst??true;o.trimNew=o.trimNew??76.2;o.trimOff=o.trimOff??0;o.kerf=o.kerf??5.2;o.keepMin=o.keepMin??300;o.keepAuto=o.keepAuto??true;o.marks=o.marks||{};
   return o;
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
@@ -472,9 +475,11 @@ function render(){
     b.cuts.forEach(p=>{if(!where.has(p.ref))where.set(p.ref,[]);where.get(p.ref).push(`${tag} (${stockName(b)})`);});
     const cnt=new Map();b.cuts.forEach(p=>cnt.set(p.ref,(cnt.get(p.ref)||0)+1));
     const txt=[...cnt].map(([r,n])=>`${n}× <span class="ref">${byRef[r].name}</span> ${fr(byRef[r].mm)}`).join(' + ');
+    const mk=b.type+'|'+Math.round(b.L)+'|'+b.cuts.map(p=>p.ref).join(',');const done=Math.min(st.marks[mk]||0,g.n);
+    const boxes=Array.from({length:g.n},(_,j)=>`<input type="checkbox" data-mk="${esc(mk)}" ${j<done?'checked':''} aria-label="Marcada ${j+1} de ${g.n}">`).join('');
     const keyS=[...cnt.keys()].map(r=>{const p=byRef[r];return `${p.sheet}|${p.name.toLowerCase()}|#${sfx(r)}`;}).join('~');
-    return `<div class="bar" data-k="${esc(keyS)}"><div class="barhead"><h3>${tag}</h3><span class="pill x">× ${g.n}</span><span class="pill">${esc(stockName(b))}</span>${b.left>=KM?`<span class="pill keep">guardar sobrante ${f0(b.left)} mm</span>`:''}</div>
-     <div class="barbox">${svgBar(b)}</div><p class="hint">${txt} · sobra ${f0(Math.max(b.left,0))} mm (${fr(Math.max(b.left,0))}) por barra</p></div>`;}).join('');
+    return `<div class="bar${done>=g.n?' done':''}" data-k="${esc(keyS)}" data-mk="${esc(mk)}" data-n="${g.n}"><div class="barhead"><h3>${tag}</h3><span class="pill x">× ${g.n}</span><span class="pill">${esc(stockName(b))}</span>${b.left>=KM?`<span class="pill keep">guardar sobrante ${f0(b.left)} mm</span>`:''}</div>
+     <div class="marks"><span class="hint">Marcada con sharpie:</span> ${boxes} <span class="mcount hint">${done} de ${g.n}</span></div><div class="barbox">${svgBar(b)}</div><p class="hint">${txt} · sobra ${f0(Math.max(b.left,0))} mm (${fr(Math.max(b.left,0))}) por barra</p></div>`;}).join('');
   {let L=0,tr=0,kp=0,sc=0;R.bars.forEach(b=>{L+=b.L;tr+=2*b.trim;const l=Math.max(b.left,0);if(l>=KM)kp+=l;else sc+=l;});
    const pc=x=>(L?x/L*100:0).toFixed(1)+' %';
    $('#loss').textContent=L?`De todo el material que se abre: ${pc(need)} son piezas, ${pc(tr)} recortes de punta, ${pc(kp)} retazos de ${f0(KM)} mm o más para el rack y ${pc(Math.max(L-need-tr-kp-sc,0)+sc)} basura (sobrantes de menos de ${f0(KM)} mm) y disco.`:'';}
@@ -503,14 +508,20 @@ function filterBars(){
   bars.forEach(el=>{const keys=el.dataset.k.split('~');
     const ok=keys.some(k=>{const [ksh,nm,num]=k.split('|');if(sh&&ksh!==sh)return false;if(!q)return true;
       return /^\d+$/.test(q)?num==='#'+parseInt(q,10):nm.includes(q);});
-    el.hidden=!ok;if(ok){shown++;n+=parseInt(el.querySelector('.pill.x').textContent.replace(/\D/g,''),10)||0;}});
-  const filt=q||sh;$('#bCount').textContent=filt?`${shown} patrones · ${n} barras`:`${bars.length} patrones`;
+    const hd=$('#bHideDone').checked&&el.classList.contains('done');
+    el.hidden=!ok||hd;if(ok&&!hd){shown++;n+=parseInt(el.querySelector('.pill.x').textContent.replace(/\D/g,''),10)||0;}});
+  let mT=0,mD=0;bars.forEach(el=>{const n2=+el.dataset.n;mT+=n2;mD+=Math.min(st.marks[el.dataset.mk]||0,n2);});
+  const filt=q||sh||$('#bHideDone').checked;$('#bCount').textContent=(filt?`${shown} patrones · ${n} barras`:`${bars.length} patrones`)+` · marcadas ${mD} de ${mT}`;
   const none=filt&&bars.length&&!shown;$('#bNone').hidden=!none;
   if(none){const mi=sh?(lastR&&lastR.miss||[]).filter(p=>p.sheet===sh).length:0;
     $('#bNone').textContent=sh&&!q?(mi?`Ninguna barra sale para ${sh} con el material de hoy: las ${mi} piezas de esa hoja están en "Falta material".`:`No hay piezas de ${sh} marcadas en el paso 2.`)
       :'Ninguna barra lleva ese item'+(sh?' en '+sh:'')+'. Revisa el número, la hoja o si está marcado en el paso 2.';}
   document.querySelectorAll('#bySheet tr[data-sheet]').forEach(tr=>tr.classList.toggle('on',tr.dataset.sheet===sh));
 }
+$('#bars').addEventListener('change',e=>{const t=e.target;if(!t.dataset.mk)return;const el=t.closest('.bar');const boxes=[...el.querySelectorAll('.marks input')];
+  let c=boxes.filter(x=>x.checked).length;boxes.forEach((x,j)=>x.checked=j<c);st.marks[t.dataset.mk]=c;if(!c)delete st.marks[t.dataset.mk];
+  el.querySelector('.mcount').textContent=`${c} de ${boxes.length}`;el.classList.toggle('done',c>=boxes.length);save();filterBars();});
+$('#bHideDone').addEventListener('change',filterBars);
 ['#bSearch','#bSheet'].forEach(s=>['input','change'].forEach(ev=>$(s).addEventListener(ev,filterBars)));
 // tocar una hoja en el resumen filtra las barras por esa hoja
 $('#bySheet').addEventListener('click',e=>{const tr=e.target.closest('tr[data-sheet]');if(!tr)return;
