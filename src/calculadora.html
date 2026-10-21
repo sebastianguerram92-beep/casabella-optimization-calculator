@@ -168,18 +168,22 @@ const SHEETS={'ID2.1':'Inicio cielo túnel','ID2.2':'Inicio lateral túnel','ID2
 const P=PARTS.map(([code,sheet,item,qty,inch],ord)=>({ref:sheet+':'+code,code,sheet,item,qty,inch,mm:inch*25.4,ord,name:(code.startsWith('INT')?'ESM-448 ':'fins 448-')+code}));
 const byRef=Object.fromEntries(P.map(p=>[p.ref,p]));
 
-// Envío 7829-PL-54 (packing list DG). Largo deducido del peso unitario (7.0 kg = 6000 mm de ESM-448).
+// Envío 7829-PL-54 (llegó 20-oct). Cantidades del packing list; largo por peso unitario confirmado: 7.5 kg = 6500, 7.0 kg = 6000, 5.5 kg = 4700.
 const PL54=[
-  {len:'6500',qty:88,type:'new',lab:'7829-EX-0288 · conteo en obra (Excel: 84)',src:'pl54'},
-  {len:'6000',qty:168,type:'new',lab:'7829-EX-0307 · conteo en obra (Excel: 217 ESM-448)',src:'pl54'},
-  {len:'4700',qty:40,type:'new',lab:'7829-EX-0314 · conteo en obra (Excel: 52)',src:'pl54'}];
+  {len:'6500',qty:84,type:'new',lab:'7829-EX-0288 · por peso (7.5 kg)',src:'pl54'},
+  {len:'6000',qty:217,type:'new',lab:'7829-EX-0307 · por peso (7.0 kg), solo ESM-448',src:'pl54'},
+  {len:'4700',qty:52,type:'new',lab:'7829-EX-0314 · por peso (5.5 kg)',src:'pl54'}];
+// Envío que llegó el 21-oct (conteo de Seb).
+const ARR21=[
+  {len:'4700',qty:83,type:'new',lab:'llegó 21-oct',src:'sitio'},
+  {len:'6000',qty:151,type:'new',lab:'llegó 21-oct',src:'sitio'}];
 const EXAMPLE={stock:[
   {len:'6500',qty:88,type:'new',lab:'',src:'sitio'},{len:'6000',qty:316,type:'new',lab:'',src:'sitio'},
   {len:'6388',qty:3,type:'off',lab:'',src:'sitio'},{len:'4700',qty:5,type:'off',lab:'',src:'sitio'},
   {len:'4300',qty:1,type:'off',lab:'',src:'sitio'},{len:'4500',qty:1,type:'off',lab:'',src:'sitio'},
   {len:'1568',qty:33,type:'off',lab:'',src:'sitio'},{len:'1981',qty:4,type:'off',lab:'',src:'sitio'},
   {len:'2159',qty:13,type:'off',lab:'',src:'sitio'},{len:'3175',qty:1,type:'off',lab:'',src:'sitio'},
-  ...PL54],
+  ...ARR21,...PL54],
   sel:null,example:false};
 
 let st=load();
@@ -191,7 +195,9 @@ function load(){
   o.stock.forEach(r=>{if(!r.src)r.src='sitio';});if(Object.keys(o.sel).some(k=>!k.includes(':')))o.sel=defaultSel();o.useArr=o.useArr??true;
   if(!o.pl54v2){const old={6500:84,6000:217,4700:52};o.stock.forEach(r=>{if(r.src==='pl54'){const L=parseLen(r.len);const n=PL54.find(x=>+x.len===L);if(n&&old[L]===r.qty){r.qty=n.qty;r.lab=n.lab;}}});o.pl54v2=true;}
   if(!o.pl54v3){o.stock=o.stock.filter(r=>!(r.src!=='pl54'&&r.type==='new'&&parseLen(r.len)===6500&&r.qty===88));o.pl54v3=true;}
-  if(!o.pl54v4){if(!o.stock.some(r=>r.src!=='pl54'&&r.type==='new'&&parseLen(r.len)===6500))o.stock.unshift({len:'6500',qty:88,type:'new',lab:'',src:'sitio'});o.pl54v4=true;}o.priority=o.priority??true;o.offFirst=o.offFirst??true;o.trimNew=o.trimNew??76.2;o.trimOff=o.trimOff??0;o.kerf=o.kerf??5.2;o.keepMin=o.keepMin??300;
+  if(!o.pl54v4){if(!o.stock.some(r=>r.src!=='pl54'&&r.type==='new'&&parseLen(r.len)===6500))o.stock.unshift({len:'6500',qty:88,type:'new',lab:'',src:'sitio'});o.pl54v4=true;}
+  if(!o.pl54v5){const fc={6500:88,6000:168,4700:40};o.stock.forEach(r=>{if(r.src==='pl54'){const L=parseLen(r.len);const n=PL54.find(x=>+x.len===L);if(n&&fc[L]===r.qty){r.qty=n.qty;r.lab=n.lab;}}});
+    ARR21.forEach(a=>{const m=o.stock.find(r=>r.src!=='pl54'&&r.type==='new'&&parseLen(r.len)===+a.len&&r.qty===a.qty);if(m){if(!m.lab)m.lab=a.lab;}else o.stock.push({...a});});o.pl54v5=true;}o.priority=o.priority??true;o.offFirst=o.offFirst??true;o.trimNew=o.trimNew??76.2;o.trimOff=o.trimOff??0;o.kerf=o.kerf??5.2;o.keepMin=o.keepMin??300;
   return o;
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
