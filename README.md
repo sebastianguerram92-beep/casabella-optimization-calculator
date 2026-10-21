@@ -2,7 +2,7 @@
 
 Calculadora de optimización de material para los fins del túnel (proyecto 7829). Se ingresa el material que hay en obra y dice de qué barra o retazo sale cada pieza.
 
-**En vivo:** https://sebastianguerram92-beep.github.io/casabella-optimization-calculator/
+**En vivo:** https://cut-opt-casabella.netlify.app (Netlify) y https://sebastianguerram92-beep.github.io/casabella-optimization-calculator/ (GitHub Pages)
 
 ## Cómo se actualiza
 
