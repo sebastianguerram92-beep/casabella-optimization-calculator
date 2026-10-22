@@ -1,3 +1,7 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Calculadora de corte en sitio</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -66,6 +70,7 @@ tr:last-child td{border-bottom:0}
 .pill.x{background:var(--accent);color:var(--accentfg);border-color:transparent;font-weight:600}
 .marks{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.marks input{width:22px;height:22px;margin:0;accent-color:var(--ok)}
 .bar.done{border-color:var(--ok);background:var(--okbg)}
+.pill.sync.ok{background:var(--okbg);color:var(--ok);border-color:transparent}.pill.sync.warn{color:var(--bad)}
 .pill.keep{background:var(--okbg);color:var(--ok);border-color:transparent}
 .barbox{overflow-x:auto}
 svg.draw{width:100%;min-width:640px;height:auto;display:block}
@@ -89,12 +94,13 @@ svg .ax{fill:var(--muted);font-family:var(--mono);font-size:11px}
 <header style="display:flex;flex-direction:column;gap:8px">
   <div class="eyebrow">Casa Bella · Túnel · fins ESM-448</div>
   <h1>Calculadora de corte en sitio</h1>
+  <div><span id="sync" class="pill sync">Solo en este teléfono</span></div>
   <p class="lede">Pon las barras y retazos que tienes al lado, marca las piezas que faltan por cortar y la calculadora te dice de qué barra sale cada item y cuánto sobra. Las piezas salen de los listados de partes del plano de optimización (ID2.1, ID2.2, ID2.3, ID3.0, ID4.0, ID4.1 e ID5.0). Las piezas ya instaladas de ID2.2 (INT-23, INT-24 e INT-01 del driveway) no se cuentan. Los largos son los del set Final.</p>
 </header>
 
 <section class="step" aria-labelledby="h-mat">
   <div class="stephead"><span class="stepno">PASO 1</span><h2 id="h-mat">Material que tienes en sitio</h2></div>
-  <p class="note">Envío 7829-PL-54 (llegó hoy), según conteo aproximado en obra: 88 barras de 6500, 168 de 6000 y 40 de 4700 de ESM-448. El Excel dice 84, 217 y 52 (sin contar las 15 ESM-449 de reposición). Los largos salen del peso por barra del packing list; confírmalos en la etiqueta.</p>
+  <p class="note">Envío 7829-PL-54 (llegó el 20-oct): 84 barras de 6500, 217 de 6000 y 52 de 4700 de ESM-448, según el packing list (sin las 15 ESM-449 de reposición). Largos por peso unitario: 7.5 kg = 6500, 7.0 kg = 6000, 5.5 kg = 4700. Envío del 21-oct: 83 de 4700 y 151 de 6000.</p>
   <p class="hint">Escribe el largo en mm (6500) o en pies y pulgadas (20' 4", 236 1/4"). “Barra nueva” lleva recorte en las dos puntas; “Retazo” usa el recorte de retazos de abajo.</p>
   <div id="exampleNote" class="note" hidden>Este material es un ejemplo. Cámbialo por lo que tienes en sitio.</div>
   <div class="tblwrap"><table class="stock"><thead><tr><th>Largo</th><th>= mm</th><th>Cantidad</th><th>Tipo</th><th>Origen</th><th>Nota (rack, código…)</th><th></th></tr></thead><tbody id="stockBody"></tbody></table></div>
@@ -134,7 +140,7 @@ svg .ax{fill:var(--muted);font-family:var(--mono);font-size:11px}
     <label class="hint"><input id="fOnly" type="checkbox" checked> solo las marcadas</label>
   </div>
   <div class="tblwrap tall"><table class="parts"><thead><tr><th>Cortar</th><th>Hoja</th><th>Item</th><th>Referencia</th><th>Largo</th><th>mm</th><th>Plano pide</th><th>Faltan por cortar</th></tr></thead><tbody id="partsBody"></tbody></table></div>
-  <p class="hint">Si ya cortaron algunas, baja el número en “Faltan por cortar”. Lo que pones aquí y el material se guardan en este navegador.</p>
+  <p class="hint">Si ya cortaron algunas, baja el número en “Faltan por cortar”. Lo que pones aquí, el material y las marcas se comparten con todos los que abren el link.</p>
 </section>
 
 <section class="step" aria-labelledby="h-res">
@@ -190,10 +196,14 @@ const EXAMPLE={stock:[
   ...ARR21,...PL54],
   sel:null,example:false};
 
+let hadLocal=false;try{hadLocal=!!localStorage.getItem(KEY);}catch(e){}
 let st=load();
 function defaultSel(){const s={};P.forEach(p=>{s[p.ref]=p.qty;});return s;}
 function load(){
   let o=null;try{o=JSON.parse(localStorage.getItem(KEY)||'null');}catch(e){}
+  return migrate(o);
+}
+function migrate(o){
   if(!o||!o.stock){o=JSON.parse(JSON.stringify(EXAMPLE));}
   if(!o.sel)o.sel=defaultSel();
   o.stock.forEach(r=>{if(!r.src)r.src='sitio';});if(Object.keys(o.sel).some(k=>!k.includes(':')))o.sel=defaultSel();o.useArr=o.useArr??true;
@@ -204,7 +214,42 @@ function load(){
     ARR21.forEach(a=>{const m=o.stock.find(r=>r.src!=='pl54'&&r.type==='new'&&parseLen(r.len)===+a.len&&r.qty===a.qty);if(m){if(!m.lab)m.lab=a.lab;}else o.stock.push({...a});});o.pl54v5=true;}o.priority=o.priority??true;o.offFirst=o.offFirst??true;o.trimNew=o.trimNew??76.2;o.trimOff=o.trimOff??0;o.kerf=o.kerf??5.2;o.keepMin=o.keepMin??300;o.keepAuto=o.keepAuto??true;o.marks=o.marks||{};
   return o;
 }
-function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}pushLater();}
+
+/* --- datos compartidos (Netlify Blobs vía /api/state) --- */
+const API='/api/state';
+let remoteOn=false,etag=null,pushT=null,dirtyAt=0,pinAsked=false;
+function setSync(txt,cls){const el=$('#sync');if(!el)return;el.textContent=txt;el.className='pill sync '+(cls||'');}
+function getPin(){try{return localStorage.getItem(KEY+'-pin')||'';}catch(e){return '';}}
+function setPin(v){try{localStorage.setItem(KEY+'-pin',v);}catch(e){}}
+function hhmm(){return new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});}
+function pushLater(){if(!remoteOn)return;dirtyAt=Date.now();setSync('Guardando…');clearTimeout(pushT);pushT=setTimeout(push,800);}
+async function push(){
+  try{
+    const r=await fetch(API,{method:'PUT',headers:{'content-type':'application/json','x-pin':getPin()},body:JSON.stringify(st)});
+    if(r.status===401){
+      if(!pinAsked){pinAsked=true;const v=prompt('Para guardar cambios para todos, escribe el PIN:');if(v){setPin(v.trim());pinAsked=false;return push();}}
+      setSync('Solo lectura: tus cambios quedan en este teléfono','warn');return;}
+    if(!r.ok)throw new Error(r.status);
+    const j=await r.json();etag=j.etag||etag;dirtyAt=0;setSync('Compartido · guardado '+hhmm(),'ok');
+  }catch(e){setSync('Sin conexión: guardado solo en este teléfono','warn');}
+}
+function applyRemote(o){
+  st=migrate(o);try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}
+  syncControls();renderStock();stockTot();renderParts();render();
+}
+async function pull(first){
+  if(dirtyAt&&Date.now()-dirtyAt<5000)return;
+  try{
+    const r=await fetch(API,{headers:etag?{'if-none-match':etag}:{} ,cache:'no-store'});
+    if(r.status===304){remoteOn=true;return;}
+    if(r.status===404){remoteOn=true;if(first&&hadLocal)push();else setSync('Compartido · sin datos aún','ok');return;}
+    if(!r.ok)throw new Error(r.status);
+    const j=await r.json();remoteOn=true;
+    if(j.etag!==etag){etag=j.etag;if(j.state&&j.state.stock)applyRemote(j.state);}
+    setSync('Compartido · al día '+hhmm(),'ok');
+  }catch(e){if(first)setSync('Solo en este teléfono','');}
+}
 
 /* --- longitudes --- */
 function parseLen(t){
@@ -245,6 +290,7 @@ $('#stockBody').addEventListener('input',e=>{const t=e.target,i=+t.dataset.i,k=t
 $('#stockBody').addEventListener('change',e=>{if(e.target.tagName==='SELECT'){st.stock[+e.target.dataset.i][e.target.dataset.k]=e.target.value;st.example=false;changed();}});
 $('#stockBody').addEventListener('click',e=>{const d=e.target.dataset.del;if(d!=null){st.stock.splice(+d,1);st.example=false;renderStock();changed();}});
 function stockTot(){let a=0,b=0;st.stock.forEach(r=>{if(!isFinite(parseLen(r.len)))return;if(r.src==='pl54')b+=r.qty;else a+=r.qty;});$('#stockTot').textContent=`En sitio: ${a} · Llega hoy: ${b}`;}
+function syncControls(){$('#offFirst').checked=st.offFirst;$('#prio').checked=st.priority;$('#useArr').checked=st.useArr;$('#keepAuto').checked=st.keepAuto;$('#keepMin').disabled=st.keepAuto;['trimNew','trimOff','kerf','keepMin'].forEach(k=>{$('#'+k).value=st[k];});}
 $('#offFirst').checked=st.offFirst;$('#offFirst').addEventListener('change',e=>{st.offFirst=e.target.checked;changed();});
 $('#prio').checked=st.priority;$('#prio').addEventListener('change',e=>{st.priority=e.target.checked;changed();});
 $('#useArr').checked=st.useArr;$('#useArr').addEventListener('change',e=>{st.useArr=e.target.checked;changed();});
@@ -530,5 +576,6 @@ $('#bySheet').addEventListener('click',e=>{const tr=e.target.closest('tr[data-sh
 let missOpen=false,lastR=null;
 let tmr=null;function changed(){save();stockTot();clearTimeout(tmr);tmr=setTimeout(render,250);}
 renderStock();stockTot();renderParts();render();
+if(location.protocol.startsWith('http')){pull(true);setInterval(()=>{if(!document.hidden)pull(false);},10000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull(false);});}
 })();
 </script>
