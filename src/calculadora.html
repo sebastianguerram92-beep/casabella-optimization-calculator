@@ -494,15 +494,15 @@ function optimize(){
 function svgBar(b){
   const W=820,H=46,sc=(W-4)/b.L;let x=2;const o=[`<svg class="draw" viewBox="0 0 ${W} ${H+18}" role="img" aria-label="Barra de ${f0(b.L)} mm">`];
   const lab=(x,w,cls,t1,t2,tc)=>{let r=`<rect x="${x.toFixed(1)}" y="2" width="${Math.max(w,.8).toFixed(1)}" height="${H}" class="${cls}"/>`;
-    if(w>50){r+=`<text x="${(x+w/2).toFixed(1)}" y="${H/2-1}" class="t1 ${tc}">${esc(t1)}</text>`;if(t2)r+=`<text x="${(x+w/2).toFixed(1)}" y="${H/2+13}" class="t2 ${tc}">${esc(t2)}</text>`;}
+    if(w>50){r+=`<text x="${(x+w/2).toFixed(1)}" y="${H/2-1}" class="t1 ${tc}">${esc(t1)}</text>`;if(t2){const t=w<150?t2.replace(/ · .*$/,''):t2;r+=`<text x="${(x+w/2).toFixed(1)}" y="${H/2+13}" class="t2 ${tc}">${esc(t)}</text>`;}}
     else if(w>22){r+=`<text x="${(x+w/2).toFixed(1)}" y="${H/2+5}" class="t2 ${tc}">${esc(t1.replace(/^.*-/,''))}</text>`;}
     return r;};
   if(b.trim>0){o.push(lab(x,b.trim*sc,'trim','','',''));x+=b.trim*sc;}
   b.cuts.forEach((p,k)=>{if(k){o.push(`<rect x="${x.toFixed(1)}" y="0" width="${Math.max(st.kerf*sc,1).toFixed(1)}" height="${H+4}" class="kerf"/>`);x+=st.kerf*sc;}
-    const small=p.mm<=SMALL_MM;o.push(lab(x,p.mm*sc,small?'sm':'lg',p.code,f0(p.mm)+' mm',small?'onsm':''));x+=p.mm*sc;});
-  if(b.left>0.5){o.push(lab(x,b.left*sc,'off','sobra',f0(b.left)+' mm','onoff'));}
+    const small=p.mm<=SMALL_MM;o.push(lab(x,p.mm*sc,small?'sm':'lg',p.code,fr(p.mm)+' · '+f0(p.mm)+' mm',small?'onsm':''));x+=p.mm*sc;});
+  if(b.left>0.5){o.push(lab(x,b.left*sc,'off','sobra',fr(b.left)+' · '+f0(b.left)+' mm','onoff'));}
   if(b.trim>0)o.push(`<rect x="${(W-2-b.trim*sc).toFixed(1)}" y="2" width="${(b.trim*sc).toFixed(1)}" height="${H}" class="trim"/>`);
-  o.push(`<text x="2" y="${H+16}" class="ax" text-anchor="start">0</text><text x="${W-2}" y="${H+16}" class="ax" text-anchor="end">${f0(b.L)} mm</text></svg>`);
+  o.push(`<text x="2" y="${H+16}" class="ax" style="text-anchor:start">0</text><text x="${W-2}" y="${H+16}" class="ax" style="text-anchor:end">${fr(b.L)} · ${f0(b.L)} mm</text></svg>`);
   return o.join('');
 }
 function patKey(b){return b.type+'|'+Math.round(b.L)+'|'+b.cuts.map(p=>p.ref).join(',');}
@@ -517,7 +517,7 @@ function setCommitted(mk,flag,c){
   st.ledger=st.ledger.filter(e=>e.sharpie||e.cut);
 }
 function keepMin(){if(!st.keepAuto)return st.keepMin;const sel=P.filter(p=>st.sel[p.ref]>0);return Math.min(...(sel.length?sel:P).map(p=>p.mm));}
-function stockName(b){const r=st.stock[b.ri];return `${b.type==='new'?'Barra':'Retazo'} ${f0(b.L)} mm · ${b.src==='pl54'?'llega hoy PL-54':'en sitio'}`;}
+function stockName(b){const r=st.stock[b.ri];return `${b.type==='new'?'Barra':'Retazo'} ${fr(b.L)} (${f0(b.L)} mm) · ${b.src==='pl54'?'llega hoy PL-54':'en sitio'}`;}
 
 /* --- paso 3 --- */
 function render(){
@@ -538,10 +538,10 @@ function render(){
     [ob.length,'retazos del rack que se usan',''],
     [nU.toFixed(1)+' %','aprovechamiento de las barras nuevas',''],
     [util.toFixed(1)+' %','aprovechamiento total (barras nuevas + retazos)',''],
-    [keep.length,`sobrantes de ${f0(KM)} mm o más para el rack`,'']]
+    [keep.length,`sobrantes de ${fr(KM)} (${f0(KM)} mm) o más para el rack`,'']]
     .map(([v,l,c])=>`<div class="kpi ${c}"><b>${v}</b><span>${l}</span></div>`).join('');
   if(R.miss.length){const m=new Map();R.miss.slice().sort((a,b)=>a.ord-b.ord).forEach(p=>m.set(p.ref,(m.get(p.ref)||0)+1));
-    $('#missing').innerHTML=`<details class="alert" id="missDet"${missOpen?' open':''}><summary style="cursor:pointer"><b>Falta material para ${R.miss.length} pieza${R.miss.length>1?'s':''}</b> <span class="hint">(toca para ver u ocultar)</span></summary><p style="margin-top:6px">${[...m].map(([r,n])=>`${n}× <span class="ref">${byRef[r].name}</span> (${f0(byRef[r].mm)} mm)`).join(', ')}. Agrega barras o retazos más largos en el paso 1.</p></details>`;$('#missDet').addEventListener('toggle',e=>{missOpen=e.target.open;});}
+    $('#missing').innerHTML=`<details class="alert" id="missDet"${missOpen?' open':''}><summary style="cursor:pointer"><b>Falta material para ${R.miss.length} pieza${R.miss.length>1?'s':''}</b> <span class="hint">(toca para ver u ocultar)</span></summary><p style="margin-top:6px">${[...m].map(([r,n])=>`${n}× <span class="ref">${byRef[r].name}</span> (${fr(byRef[r].mm)} · ${f0(byRef[r].mm)} mm)`).join(', ')}. Agrega barras o retazos más largos en el paso 1.</p></details>`;$('#missDet').addEventListener('toggle',e=>{missOpen=e.target.open;});}
   else $('#missing').innerHTML=R.pieces.length?'':'<p class="hint">Marca piezas en el paso 2 para ver el plan.</p>';
   // agrupar barras iguales
   const groups=new Map();R.bars.forEach((b,i)=>{const k=patKey(b);if(!groups.has(k))groups.set(k,{b,n:0,idx:[],ms:0,mc:0});const g=groups.get(k);g.n++;g.idx.push(i);if(b.lk){if(b.lk.sharpie)g.ms++;if(b.lk.cut)g.mc++;}});
@@ -554,11 +554,11 @@ function render(){
     const mk=patKey(b);const done=g.ms,cutN=g.mc;
     const row=(kind,label,c)=>`<div class="marks ${kind}" data-kind="${kind}"><span class="hint">${label}:</span> ${Array.from({length:g.n},(_,j)=>`<input type="checkbox" data-mk="${esc(mk)}" ${j<c?'checked':''} aria-label="${label} ${j+1} de ${g.n}">`).join('')} <span class="mcount hint">${c} de ${g.n}</span></div>`;
     const keyS=[...cnt.keys()].map(r=>{const p=byRef[r];return `${p.sheet}|${p.name.toLowerCase()}|#${sfx(r)}`;}).join('~');
-    return `<div class="bar${done>=g.n?' done':''}${cutN>=g.n?' cut':''}" data-k="${esc(keyS)}" data-mk="${esc(mk)}" data-n="${g.n}" data-ms="${done}" data-mc="${cutN}"><div class="barhead"><h3>${tag}</h3><span class="pill x">× ${g.n}</span><span class="pill">${esc(stockName(b))}</span>${b.left>=KM?`<span class="pill keep">guardar sobrante ${f0(b.left)} mm</span>`:''}</div>
-     ${row('sharpie','Marcada con sharpie',done)}${row('cortada','Cortada en sitio',cutN)}<div class="barbox">${svgBar(b)}</div><p class="hint">${txt} · sobra ${f0(Math.max(b.left,0))} mm (${fr(Math.max(b.left,0))}) por barra</p></div>`;}).join('');
+    return `<div class="bar${done>=g.n?' done':''}${cutN>=g.n?' cut':''}" data-k="${esc(keyS)}" data-mk="${esc(mk)}" data-n="${g.n}" data-ms="${done}" data-mc="${cutN}"><div class="barhead"><h3>${tag}</h3><span class="pill x">× ${g.n}</span><span class="pill">${esc(stockName(b))}</span>${b.left>=KM?`<span class="pill keep">guardar sobrante ${fr(b.left)} (${f0(b.left)} mm)</span>`:''}</div>
+     ${row('sharpie','Marcada con sharpie',done)}${row('cortada','Cortada en sitio',cutN)}<div class="barbox">${svgBar(b)}</div><p class="hint">${txt} · sobra ${fr(Math.max(b.left,0))} (${f0(Math.max(b.left,0))} mm) por barra</p></div>`;}).join('');
   {let L=0,tr=0,kp=0,sc=0;R.bars.forEach(b=>{L+=b.L;tr+=2*b.trim;const l=Math.max(b.left,0);if(l>=KM)kp+=l;else sc+=l;});
    const pc=x=>(L?x/L*100:0).toFixed(1)+' %';
-   $('#loss').textContent=L?`De todo el material que se abre: ${pc(need)} son piezas, ${pc(tr)} recortes de punta, ${pc(kp)} retazos de ${f0(KM)} mm o más para el rack y ${pc(Math.max(L-need-tr-kp-sc,0)+sc)} basura (sobrantes de menos de ${f0(KM)} mm) y disco.`:'';}
+   $('#loss').textContent=L?`De todo el material que se abre: ${pc(need)} son piezas, ${pc(tr)} recortes de punta, ${pc(kp)} retazos de ${fr(KM)} (${f0(KM)} mm) o más para el rack y ${pc(Math.max(L-need-tr-kp-sc,0)+sc)} basura (sobrantes de menos de ${fr(KM)} / ${f0(KM)} mm) y disco.`:'';}
   filterBars();
   {const ask=new Map(),miss=new Map();R.pieces.forEach(p=>ask.set(p.sheet,(ask.get(p.sheet)||0)+1));R.miss.forEach(p=>miss.set(p.sheet,(miss.get(p.sheet)||0)+1));
    const rows=Object.keys(SHEETS).filter(k=>ask.has(k)).map(k=>{const a=ask.get(k),m=miss.get(k)||0;return `<tr data-sheet="${k}" class="clk${$('#bSheet').value===k?' on':''}" title="Ver las barras de ${k}"><td><b>${k}</b></td><td>${SHEETS[k]}</td><td class="n">${a}</td><td class="n">${a-m}</td><td class="n"${m?' style="color:var(--bad);font-weight:600"':''}>${m}</td></tr>`;}).join('');
@@ -570,7 +570,7 @@ function render(){
     return `<tr><td class="n">${p.sheet} · ${p.item}</td><td class="ref">${p.name}</td><td class="n">${fr(p.mm)}<br><span class="hint">${f0(p.mm)} mm</span></td><td class="n">${st.sel[r]}</td><td>${uniq.map(esc).join('<br>')}${miss?`<br><b style="color:var(--bad)">faltan ${miss}: no hay material</b>`:''}</td></tr>`;}).join('')||'<tr><td colspan="5" class="hint">Sin piezas marcadas.</td></tr>';
   // material que queda
   const usedCount=new Map();R.bars.forEach(b=>usedCount.set(b.ri,(usedCount.get(b.ri)||0)+1));
-  const leftRows=st.stock.map((r,ri)=>{const L=parseLen(r.len);if(!isFinite(L))return '';const u=usedCount.get(ri)||0;const off=r.src==='pl54'&&!st.useArr;return `<tr><td>${r.type==='new'?'Barra':'Retazo'} ${f0(L)} mm${r.lab?' · '+esc(r.lab):''}</td><td>${r.src==='pl54'?'Llega hoy (PL-54)'+(off?', no se cuenta':''):'En sitio'}</td><td class="n">${r.qty}</td><td class="n">${u}</td><td class="n"><b>${Math.max(r.qty-u,0)}</b></td></tr>`;}).join('');
+  const leftRows=st.stock.map((r,ri)=>{const L=parseLen(r.len);if(!isFinite(L))return '';const u=usedCount.get(ri)||0;const off=r.src==='pl54'&&!st.useArr;return `<tr><td>${r.type==='new'?'Barra':'Retazo'} ${fr(L)} (${f0(L)} mm)${r.lab?' · '+esc(r.lab):''}</td><td>${r.src==='pl54'?'Llega hoy (PL-54)'+(off?', no se cuenta':''):'En sitio'}</td><td class="n">${r.qty}</td><td class="n">${u}</td><td class="n"><b>${Math.max(r.qty-u,0)}</b></td></tr>`;}).join('');
   const kp=keep.slice().sort((a,b)=>b.left-a.left).map(b=>`${f0(b.left)} mm (${fr(b.left)})`);
   $('#leftBox').innerHTML=`<div class="tblwrap"><table><thead><tr><th>Material</th><th>Origen</th><th>Tienes</th><th>Se usan</th><th>Quedan sin abrir</th></tr></thead><tbody>${leftRows}</tbody></table></div>
    <p style="margin-top:10px"><b>Sobrantes para el rack (${kp.length}):</b> ${kp.length?kp.join(' · '):'ninguno'}</p>`;
