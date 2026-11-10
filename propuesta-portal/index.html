@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+<title>Portal de Avance de Obra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: TOM house style. Bands separated by hairlines, amber in-point markers on each section label, one dark slate band for the price. */
+:root{
+  --paper:#f6f7f9; --surface:#ffffff; --ink:#141821; --muted:#5a6273; --line:#dde1e8;
+  --accent:#2b4eff; --accent-soft:#e6ebff; --mark:#ffb020; --mark-ink:#1b1300; --mark-soft:#fff3d9;
+  --ok:#1f8a5b; --ok-soft:#dff3ea;
+  --slate:#141821; --slate-fg:#f3f5fa; --slate-muted:#a9b1c2;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0f1218; --surface:#171b24; --ink:#eef1f7; --muted:#9aa3b5; --line:#2a3040;
+  --accent:#7d95ff; --accent-soft:#1f2846; --mark:#ffbf47; --mark-soft:#3a2f14;
+  --ok:#4fc792; --ok-soft:#163327;
+  --slate:#070910; --slate-fg:#f3f5fa; --slate-muted:#a9b1c2; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f1218; --surface:#171b24; --ink:#eef1f7; --muted:#9aa3b5; --line:#2a3040;
+  --accent:#7d95ff; --accent-soft:#1f2846; --mark:#ffbf47; --mark-soft:#3a2f14;
+  --ok:#4fc792; --ok-soft:#163327;
+  --slate:#070910; --slate-fg:#f3f5fa; --slate-muted:#a9b1c2; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:14.5px;line-height:1.5}
+.wrap{max-width:1000px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.band{padding-block:30px}
+.band + .band{border-top:1px solid var(--line)}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-stretch:112%;font-weight:800;font-size:clamp(28px,4.6vw,42px);line-height:1.05;letter-spacing:-.01em}
+h1 em{font-style:normal;color:var(--accent)}
+h2{font-stretch:110%;font-weight:800;font-size:21px;line-height:1.15;margin:6px 0 14px}
+h3{font-stretch:105%;font-weight:700;font-size:15px;margin:0 0 4px}
+p{margin:0 0 8px;max-width:72ch}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.small{font-size:13px;color:var(--muted)}
+
+/* Header */
+.top{padding-block:28px 22px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.logo{font-family:var(--display);font-weight:900;font-stretch:125%;font-size:24px;letter-spacing:.02em;display:flex;align-items:center;gap:10px}
+.logo i{width:13px;height:13px;border-radius:50%;background:var(--mark);display:inline-block}
+.logo span{color:var(--muted);font-weight:500;font-stretch:100%;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.meta{font-family:var(--mono);font-size:11.5px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.hero{display:grid;grid-template-columns:1.15fr 1fr;gap:28px;align-items:end;margin-top:22px}
+.hero>*{min-width:0}
+.lede{color:var(--muted);margin:0}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:18px}
+.facts div{background:var(--surface);padding:10px 14px}
+.facts b{display:block;font-family:var(--display);font-stretch:110%;font-size:18px;font-weight:800}
+.facts small{color:var(--muted);font-size:12px}
+
+/* Section label with amber in-point */
+.tc{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:10px}
+.tc::before{content:"";width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid var(--mark)}
+
+ul.ticks{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+ul.ticks li{padding-left:20px;position:relative;font-size:13.5px}
+ul.ticks li::before{content:"";position:absolute;left:2px;top:.62em;width:9px;height:2px;background:var(--accent)}
+
+/* Goals */
+.goals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.goal{border-left:3px solid var(--accent);padding:2px 0 2px 12px;min-width:0}
+.goal .who{font-family:var(--mono);font-size:10.5px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.goal p{font-size:13px;color:var(--muted);margin:0}
+
+/* Phase strip */
+.phases{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ph{background:var(--surface);padding:12px 14px;min-width:0}
+.ph .k{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.ph .t{font-family:var(--display);font-stretch:110%;font-weight:800;font-size:16px}
+.ph .pct{font-family:var(--display);font-stretch:118%;font-weight:900;font-size:26px;line-height:1.1;margin-top:4px}
+.pbar{height:6px;background:var(--line);border-radius:99px;margin-top:8px;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.ph.done .pct{color:var(--ok)} .ph.done .pbar i{background:var(--ok)}
+.ph.now{background:var(--accent-soft)} .ph.now .pct{color:var(--accent)} .ph.now .k{color:var(--accent)}
+.caption{font-size:12.5px;color:var(--muted);margin-top:10px}
+
+/* Two portals */
+.portals{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:22px}
+.split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.split>div{padding:18px 22px 20px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.split>div+div{border-left:1px solid var(--line)}
+.lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:4px;display:inline-block;align-self:flex-start}
+.lbl.pm{background:var(--slate);color:var(--slate-fg)}
+.lbl.cl{background:var(--mark);color:var(--mark-ink)}
+.side-title p{font-size:13px;color:var(--muted);margin:2px 0 0}
+.side-title h3{font-size:19px;font-stretch:110%;font-weight:800;margin-top:8px}
+.feat{border-top:1px solid var(--line);padding-top:12px}
+.feat .fh{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:6px}
+.feat .code{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.feat.key h3{color:var(--accent)}
+
+/* Unit example */
+.units{border-top:1px solid var(--line);background:var(--paper);padding:16px 22px 18px;display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:start}
+.units>*{min-width:0}
+.grid{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.floor{display:grid;grid-template-columns:48px repeat(6,minmax(0,1fr));gap:4px;align-items:center}
+.floor .fl{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.u{height:26px;border:1px solid var(--line);background:var(--surface);border-radius:4px;font-family:var(--mono);font-size:10.5px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.u.i{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.u.d{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:11px;height:11px;border-radius:3px;display:inline-block;border:1px solid var(--line);background:var(--surface)}
+.sw.i{background:var(--ok);border-color:var(--ok)} .sw.d{background:var(--accent);border-color:var(--accent)}
+.rule{font-size:13.5px;background:var(--accent-soft);border-radius:8px;padding:12px 14px;margin:0}
+.rule .big{font-family:var(--display);font-stretch:118%;font-weight:900;font-size:34px;line-height:1;color:var(--accent);display:block;margin:6px 0 4px}
+table.mini{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+table.mini th,table.mini td{padding:5px 0;border-bottom:1px solid var(--line);text-align:left;font-weight:500}
+table.mini td{text-align:right;font-weight:600}
+
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags span{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 11px;font-size:13px;color:var(--muted)}
+
+/* Price slate */
+.slate{background:var(--slate);color:var(--slate-fg);border-radius:14px;padding:22px 26px;display:grid;grid-template-columns:1.1fr 1fr;gap:28px}
+.slate>*{min-width:0}
+.slate .tc{color:var(--slate-muted)}
+.price{font-family:var(--display);font-stretch:118%;font-weight:900;font-size:clamp(42px,7vw,60px);line-height:1;margin:10px 0 6px}
+.price sup{font-size:.3em;vertical-align:top;position:relative;top:.6em;margin-right:6px;font-weight:700;letter-spacing:.06em}
+.slate p{color:var(--slate-muted);font-size:13.5px}
+table.plan{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+table.plan th,table.plan td{text-align:left;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.12);vertical-align:top}
+table.plan th{font-weight:500;color:var(--slate-muted);padding-right:12px}
+table.plan td{text-align:right;font-weight:600;white-space:nowrap}
+
+/* Timeline */
+.tl{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 22px;overflow-x:auto}
+.tl-in{min-width:560px;display:grid;grid-template-columns:220px repeat(6,minmax(0,1fr));gap:6px 4px;align-items:center}
+.tl .wk{grid-column:span 2;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:4px}
+.tl .day{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-align:center}
+.tl .task{font-size:13px;padding-right:8px}
+.tl .task .h{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.bar{height:18px;background:var(--accent);border-radius:4px}
+.bar.a{background:var(--slate)}
+.ms{height:13px;width:13px;background:var(--mark);transform:rotate(45deg);justify-self:center}
+
+/* Considerations */
+.conds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.cond{border-left:3px solid var(--accent);padding:2px 0 2px 12px;min-width:0}
+.cond p{font-size:13px;color:var(--muted);margin:0}
+.cond.wide{grid-column:1/-1;border-left-color:var(--mark);background:var(--mark-soft);border-radius:0 8px 8px 0;padding:12px 14px}
+.cond.wide p{color:var(--ink)}
+
+/* Sign */
+.next{display:grid;grid-template-columns:1.6fr 1fr;gap:28px;align-items:end}
+.next>*{min-width:0}
+.next ol{margin:0;padding-left:20px;display:grid;gap:4px;font-size:13.5px}
+.sign{border-top:3px solid var(--ink);padding-top:10px}
+.sign b{font-family:var(--display);font-stretch:110%;font-size:17px;display:block}
+.sign small{color:var(--muted)}
+footer{padding-block:16px 30px;font-size:11.5px;color:var(--muted);font-family:var(--mono)}
+
+@media (max-width:760px){
+  .hero,.goals,.split,.units,.slate,.conds,.next{grid-template-columns:minmax(0,1fr)}
+  .facts,.phases{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .split>div+div{border-left:0;border-top:1px solid var(--line)}
+  .slate{padding:20px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap top">
+  <div class="brand">
+    <div class="logo"><i></i>TOM <span>Consulting</span></div>
+    <div class="meta"><span>Propuesta comercial</span><span>10 de noviembre de 2026</span><span>Precios en USD</span></div>
+  </div>
+  <div class="hero">
+    <h1>Portal de avance de obra <em>para tus clientes</em></h1>
+    <p class="lede">Una plataforma web donde el project manager controla cada proyecto por fase y por unidad, y cada cliente ve en qué va su obra sin tener que preguntar.</p>
+  </div>
+  <div class="facts">
+    <div><b>MVP web</b><small>funcional, en celular y computador</small></div>
+    <div><b>4 fases</b><small>diseño a instalación</small></div>
+    <div><b>3 semanas</b><small>6 sesiones de trabajo</small></div>
+    <div><b>USD 400</b><small>precio fijo</small></div>
+  </div>
+</div>
+
+<section class="band"><div class="wrap">
+  <div class="tc">01 · Objetivo</div>
+  <h2>Un solo lugar para el estado de cada proyecto</h2>
+  <p>El project manager registra el avance una sola vez. De ahí salen la vista del cliente y el cobro por avance, desde el diseño hasta la instalación.</p>
+  <div class="goals" style="margin-top:16px">
+    <div class="goal"><div class="who">Para el cliente</div><h3>Visibilidad en tiempo real</h3><p>Ve el avance de cada fase, por piso y unidad, con fotos y documentos.</p></div>
+    <div class="goal"><div class="who">Para el project manager</div><h3>Control total del avance</h3><p>Marca qué unidades se fabricaron, despacharon o instalaron. El fabricante solo reporta qué unidades lleva.</p></div>
+    <div class="goal"><div class="who">Para la empresa</div><h3>Cobro por avance</h3><p>Lo ejecutado se suma solo, en pies lineales, SQFT o piezas, listo para cobrar lo que se va avanzando.</p></div>
+  </div>
+</div></section>
+
+<section class="band"><div class="wrap">
+  <div class="tc">02 · Alcance del MVP</div>
+  <h2>Cuatro fases, medidas en porcentaje de avance</h2>
+  <div class="phases" role="list" aria-label="Fases del proyecto">
+    <div class="ph done" role="listitem"><div class="k">Fase 1</div><div class="t">Diseño</div><div class="pct">100%</div><div class="pbar"><i style="width:100%"></i></div></div>
+    <div class="ph now" role="listitem"><div class="k">Fase 2 · en curso</div><div class="t">Fabricación</div><div class="pct">65%</div><div class="pbar"><i style="width:65%"></i></div></div>
+    <div class="ph" role="listitem"><div class="k">Fase 3</div><div class="t">Despacho</div><div class="pct">20%</div><div class="pbar"><i style="width:20%"></i></div></div>
+    <div class="ph" role="listitem"><div class="k">Fase 4</div><div class="t">Instalación</div><div class="pct">0%</div><div class="pbar"><i style="width:0%"></i></div></div>
+  </div>
+  <p class="caption">Así ve el cliente su proyecto. Cifras de ejemplo. La cotización queda fuera: el proyecto entra a la plataforma cuando arranca el diseño.</p>
+
+  <div class="portals">
+    <div class="split">
+      <div>
+        <div class="side-title"><span class="lbl pm">Equipo interno</span><h3>Portal del PM y Admin / CEO</h3><p>Donde el equipo carga, controla y cobra el avance.</p></div>
+        <div class="feat"><div class="fh"><h3>Proyectos y fases</h3><span class="code">A1</span></div><ul class="ticks">
+          <li>Crear proyectos y asignarlos a un cliente.</li>
+          <li>Cuatro fases fijas: diseño, fabricación, despacho e instalación.</li>
+          <li>Definir cómo se mide cada proyecto según su alcance: pies lineales, SQFT o número de piezas.</li>
+          <li>Fecha de inicio, fecha estimada y fecha real de cierre por fase.</li>
+          <li>Subir notas, fotos y documentos en cada fase (planos, actas de entrega).</li></ul></div>
+        <div class="feat key"><div class="fh"><h3>Control de avance por unidad</h3><span class="code">A2</span></div><ul class="ticks">
+          <li>Listado de elementos por proyecto, organizado por piso y unidad (por ejemplo, balcones).</li>
+          <li>Medida de cada unidad cargada de antemano.</li>
+          <li>El PM marca cada unidad como fabricada, despachada o instalada.</li>
+          <li>Cálculo automático del porcentaje de avance por fase y del proyecto completo.</li></ul></div>
+        <div class="feat key"><div class="fh"><h3>Cobro por avance</h3><span class="code">A3</span></div><ul class="ticks">
+          <li>Acumulado ejecutado desde el último corte, en la medida del proyecto.</li>
+          <li>Cierre de corte con resumen de unidades y cantidades a cobrar.</li>
+          <li>Historial de cortes por proyecto.</li></ul></div>
+        <div class="feat"><div class="fh"><h3>Vista general Admin / CEO</h3><span class="code">A4</span></div><ul class="ticks">
+          <li>Todos los proyectos con su fase actual y porcentaje de avance.</li>
+          <li>Filtros por cliente, fase y PM responsable.</li>
+          <li>Total ejecutado pendiente por cobrar en todos los proyectos.</li>
+          <li>Gestión de clientes y usuarios del equipo (Admin / CEO y PM).</li></ul></div>
+        <div class="feat"><div class="fh"><h3>Integración con Zoho</h3><span class="code">A5</span></div><ul class="ticks">
+          <li><b>Zoho CRM:</b> los clientes y contactos se toman del CRM, y un negocio ganado se convierte en proyecto.</li>
+          <li><b>Zoho Projects:</b> los proyectos, fases y avance se reflejan en Zoho Projects.</li></ul></div>
+      </div>
+      <div>
+        <div class="side-title"><span class="lbl cl">Clientes</span><h3>Portal del cliente</h3><p>Lo que ve cada cliente de su proyecto. Solo consulta, no edita.</p></div>
+        <div class="feat"><div class="fh"><h3>Acceso privado</h3><span class="code">C1</span></div><ul class="ticks">
+          <li>Cada cliente entra con su propio acceso y solo ve sus proyectos.</li>
+          <li>Funciona desde el celular o el computador.</li></ul></div>
+        <div class="feat key"><div class="fh"><h3>Avance por fase</h3><span class="code">C2</span></div><ul class="ticks">
+          <li>Porcentaje de avance de cada fase, con la fase actual resaltada.</li>
+          <li>Fechas estimadas de cada fase.</li></ul></div>
+        <div class="feat"><div class="fh"><h3>Avance por piso y unidad</h3><span class="code">C3</span></div><ul class="ticks">
+          <li>Qué unidades están fabricadas, despachadas o instaladas.</li>
+          <li>Cantidad ejecutada en la medida del proyecto.</li></ul></div>
+        <div class="feat"><div class="fh"><h3>Fotos y documentos</h3><span class="code">C4</span></div><ul class="ticks">
+          <li>Fotos del avance, planos y actas de entrega, organizados por fase.</li>
+          <li>Historial de actualizaciones del proyecto.</li></ul></div>
+        <div class="feat"><div class="fh"><h3>Notificaciones</h3><span class="code">C5</span></div><ul class="ticks">
+          <li>Correo automático cuando cambia la fase de su proyecto.</li>
+          <li>Aviso cuando se registra avance nuevo en sus unidades.</li></ul></div>
+      </div>
+    </div>
+    <div class="units" aria-label="Ejemplo de control de avance por unidad">
+      <div>
+        <h3>Ejemplo: balcones por piso y unidad</h3>
+        <div class="grid">
+          <div class="floor"><span class="fl">Piso 5</span><div class="u">501</div><div class="u d">502</div><div class="u d">503</div><div class="u d">504</div><div class="u">505</div><div class="u">506</div></div>
+          <div class="floor"><span class="fl">Piso 4</span><div class="u i">401</div><div class="u i">402</div><div class="u d">403</div><div class="u d">404</div><div class="u">405</div><div class="u">406</div></div>
+          <div class="floor"><span class="fl">Piso 3</span><div class="u i">301</div><div class="u i">302</div><div class="u i">303</div><div class="u i">304</div><div class="u i">305</div><div class="u d">306</div></div>
+        </div>
+        <div class="legend"><span><i class="sw i"></i>Instalada</span><span><i class="sw d"></i>Despachada</span><span><i class="sw"></i>Pendiente</span></div>
+      </div>
+      <div>
+        <table class="mini">
+          <tr><th>Unidades despachadas</th><td>6</td></tr>
+          <tr><th>Unidades instaladas</th><td>7</td></tr>
+          <tr><th>Pies lineales a cobrar</th><td>≈ 312 ft</td></tr>
+        </table>
+        <p class="rule" style="margin-top:10px"><b>Corte de esta semana</b><span class="big">72%</span>Unidades despachadas o instaladas. Cifras de ejemplo.</p>
+      </div>
+    </div>
+  </div>
+  <p class="caption">El fabricante dice qué unidades lleva. El PM las marca y la plataforma calcula el avance en la medida del proyecto; en este ejemplo, pies lineales.</p>
+</div></section>
+
+<section class="band"><div class="wrap">
+  <div class="tc">03 · Inversión</div>
+  <h2>Un precio fijo por el MVP completo</h2>
+  <div class="slate">
+    <div>
+      <div class="tc">Total MVP</div>
+      <div class="price"><sup>USD</sup>400</div>
+      <p>Precio fijo por el alcance descrito en esta propuesta.</p>
+    </div>
+    <div>
+      <table class="plan">
+        <tr><th>Esfuerzo total</th><td>10 h</td></tr>
+        <tr><th>Período de ejecución</th><td>3 semanas</td></tr>
+        <tr><th>Sesiones de trabajo</th><td>6 (2 por semana)</td></tr>
+        <tr><th>Revisiones con el cliente</th><td>3 (fin de cada semana)</td></tr>
+      </table>
+    </div>
+  </div>
+</div></section>
+
+<section class="band"><div class="wrap">
+  <div class="tc">04 · Cronograma</div>
+  <h2>Tres semanas, dos sesiones por semana</h2>
+  <p>Diez horas de esfuerzo distribuidas en tres semanas. Cada semana cierra con una revisión del cliente.</p>
+  <div class="tl" style="margin-top:14px">
+    <div class="tl-in">
+      <span></span><span class="wk">Semana 1</span><span class="wk">Semana 2</span><span class="wk">Semana 3</span>
+      <span></span><span class="day">S1</span><span class="day">S2</span><span class="day">S3</span><span class="day">S4</span><span class="day">S5</span><span class="day">S6</span>
+
+      <span class="task">Arranque y definición</span>
+      <div class="bar a" style="grid-column:2"></div><span style="grid-column:3 / span 5"></span>
+
+      <span class="task">Proyectos, fases y portal del cliente</span>
+      <span style="grid-column:2"></span><div class="bar" style="grid-column:3"></div><span style="grid-column:4 / span 4"></span>
+
+      <span class="task">Avance por unidad y cobro</span>
+      <span style="grid-column:2 / span 2"></span><div class="bar" style="grid-column:4"></div><span style="grid-column:5 / span 3"></span>
+
+      <span class="task">Zoho CRM y Zoho Projects</span>
+      <span style="grid-column:2 / span 3"></span><div class="bar" style="grid-column:5"></div><span style="grid-column:6 / span 2"></span>
+
+      <span class="task">Notificaciones y pruebas</span>
+      <span style="grid-column:2 / span 4"></span><div class="bar" style="grid-column:6"></div><span style="grid-column:7"></span>
+
+      <span class="task">Ajustes y entrega</span>
+      <span style="grid-column:2 / span 5"></span><div class="bar a" style="grid-column:7"></div>
+
+      <span class="task"><b>Revisión con el cliente</b> <span class="h">· fin de cada semana</span></span>
+      <span style="grid-column:2"></span><div class="ms" style="grid-column:3"></div><span style="grid-column:4"></span><div class="ms" style="grid-column:5"></div><span style="grid-column:6"></span><div class="ms" style="grid-column:7"></div>
+    </div>
+  </div>
+  <p class="caption">S1 a S6 son las sesiones de trabajo. Los rombos marcan la revisión con el cliente al final de cada semana.</p>
+</div></section>
+
+<section class="band"><div class="wrap">
+  <div class="tc">05 · Consideraciones</div>
+  <h2>Reglas claras, sin sorpresas</h2>
+  <div class="conds">
+    <div class="cond"><h3>MVP funcional en web</h3><p>Se usa desde el navegador del celular o el computador. No incluye app nativa.</p></div>
+    <div class="cond"><h3>Información del cliente</h3><p>La empresa entrega el listado de proyectos, unidades y medidas, además de su logo.</p></div>
+    <div class="cond"><h3>Acceso a Zoho</h3><p>La empresa da acceso a su cuenta de Zoho CRM y Zoho Projects para conectar la plataforma.</p></div>
+    <div class="cond"><h3>Costos de terceros</h3><p>Licencias de Zoho, dominio y hospedaje corren por cuenta de la empresa.</p></div>
+    <div class="cond"><h3>Revisiones semanales</h3><p>Una revisión con el cliente al final de cada semana y ajustes menores antes de la entrega.</p></div>
+    <div class="cond"><h3>Cambios de alcance</h3><p>Lo que no está en esta propuesta se cotiza aparte.</p></div>
+    <div class="cond wide"><h3>Participación del cliente</h3><p>La información y la validación del cliente son fundamentales para el proyecto. La disponibilidad para las sesiones de trabajo y para las revisiones al final de cada semana puede impactar el cronograma de entrega.</p></div>
+  </div>
+  <div style="margin-top:22px">
+    <h3>Fuera del MVP</h3>
+    <div class="tags" style="margin-top:8px"><span>Cotizaciones</span><span>App nativa iOS / Android</span><span>Pagos en línea</span><span>Facturación electrónica</span><span>Chat o WhatsApp</span><span>Fases personalizables</span><span>Reportes avanzados</span><span>Firma electrónica</span></div>
+  </div>
+</div></section>
+
+<section class="band"><div class="wrap">
+  <div class="tc">Próximos pasos</div>
+  <div class="next" style="margin-top:10px">
+    <ol>
+      <li>Confirmar el alcance y la fecha de inicio.</li>
+      <li>Compartir el listado de proyectos activos con sus unidades y medidas.</li>
+      <li>Agendar la primera sesión de trabajo y dar acceso a Zoho.</li>
+    </ol>
+    <div class="sign"><b>Sebastian Guerra</b><small>TOM Consulting</small></div>
+  </div>
+</div></section>
+
+<footer class="wrap">TOM Consulting · Propuesta preliminar, 10 de noviembre de 2026. Válida por 30 días. Los detalles finales se acuerdan por escrito.</footer>
+</body>
+</html>
